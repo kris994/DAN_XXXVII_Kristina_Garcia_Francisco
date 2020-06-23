@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DAN_XXXVII_Kristina_Garcia_Francisco
 {
@@ -10,6 +6,11 @@ namespace DAN_XXXVII_Kristina_Garcia_Francisco
     {
         static void Main(string[] args)
         {
+            Truck truck = new Truck();
+
+            truck.CreateWorkers();
+
+            Console.ReadKey();
         }
     }
 }
