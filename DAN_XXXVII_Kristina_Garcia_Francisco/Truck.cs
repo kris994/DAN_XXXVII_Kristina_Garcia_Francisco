@@ -10,79 +10,40 @@ namespace DAN_XXXVII_Kristina_Garcia_Francisco
 {
     class Truck
     {
-        private List<Thread> allTrucks = new List<Thread>();       
-        private List<int> allRoutes = new List<int>();
-        private List<int> bestRoutes = new List<int>();
-        private Random rng = new Random();
-        private readonly object lockRoutes = new object();
+        public int route { get; set; }
+        private List<Thread> allTrucks = new List<Thread>();
 
-        public void CreateRoutes()
+        public Truck()
         {
-            ReadWriteFile rwf = new ReadWriteFile();
-            lock(lockRoutes)
-            {
-                rwf.WriteToFile();
-                Monitor.Pulse(lockRoutes);
-            }
+
         }
 
-        public void BestRoutes()
+        public Truck(int route)
         {
-            List<int> distinctValues = allRoutes.Distinct().ToList();
-            distinctValues.Sort();
+            this.route = route;
+        }
 
-            for (int i = 0; i < distinctValues.Count; i++)
+        public void TruckLoading()
+        {
+
+        }
+
+        public void CreateTrucks()
+        {
+            for (int i = 1; i < 11; i++)
             {
-                if (distinctValues[i] % 3 == 0)
+                Thread truckThreads = new Thread(TruckLoading)
                 {
-                    bestRoutes.Add(distinctValues[i]);
-                    if(bestRoutes.Count == 10)
-                    {
-                        break;
-                    }
-                }
+                    Name = "Truck_" + i
+                };
+                Console.WriteLine(truckThreads.Name);
+                allTrucks.Add(truckThreads);
             }
 
-            Console.Write("\n\nRoutes were created, the best routes are: ");
-            foreach (var item in bestRoutes)
+            foreach (var item in allTrucks)
             {
-                Console.Write("{0} ", item);
+                item.Start();
             }
-            Console.WriteLine("\nThe trucks can now be loaded.");
-        }
-
-        public void ChooseBestRoutes()
-        {
-            ReadWriteFile rwf = new ReadWriteFile();
-
-            Console.WriteLine("Manager waiting for routes to be created...");
-            // Sleep max 3sec
-            int waited = rng.Next(1000, 3001);
-            
-            lock (lockRoutes)
-            {
-                Monitor.Wait(lockRoutes, waited);
-
-                Console.WriteLine("Manager waited {0} milliseconds for the routes to be created.", waited);
-
-                // Get all routes from the file
-                rwf.ReadFile(allRoutes);
-
-                // Get best 10 routes
-                BestRoutes();
-            }
-        }
-
-        public void CreateWorkers()
-        {
-            Thread getValues = new Thread(CreateRoutes);
-            getValues.Start();
-
-            Thread menager = new Thread(ChooseBestRoutes);
-            menager.Start();
-
-            getValues.Join();
-            menager.Join();
         }
     }
 }

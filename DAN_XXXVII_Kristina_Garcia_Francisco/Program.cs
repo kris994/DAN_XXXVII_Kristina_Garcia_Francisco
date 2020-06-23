@@ -6,9 +6,11 @@ namespace DAN_XXXVII_Kristina_Garcia_Francisco
     {
         static void Main(string[] args)
         {
+            Manager manager = new Manager();
             Truck truck = new Truck();
 
-            truck.CreateWorkers();
+            manager.CreateWorkers();
+            truck.CreateTrucks();
 
             Console.ReadKey();
         }
