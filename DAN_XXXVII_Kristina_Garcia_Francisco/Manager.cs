@@ -10,7 +10,7 @@ namespace DAN_XXXVII_Kristina_Garcia_Francisco
     class Manager
     {        
         private List<int> allRoutes = new List<int>();
-        private List<int> bestRoutes = new List<int>();
+        public static List<int> bestRoutes = new List<int>();
         private Random rng = new Random();
         private readonly object lockRoutes = new object();
 
@@ -46,7 +46,7 @@ namespace DAN_XXXVII_Kristina_Garcia_Francisco
             {
                 Console.Write("{0} ", item);
             }
-            Console.WriteLine("\nThe trucks can now be loaded.");
+            Console.WriteLine("\nThe trucks can now be loaded.\n");
         }
 
         public void ChooseBestRoutes()
@@ -55,13 +55,9 @@ namespace DAN_XXXVII_Kristina_Garcia_Francisco
 
             Console.WriteLine("Manager waiting for routes to be created...");
             // Sleep max 3sec
-            int waited = rng.Next(1000, 3001);
-
             lock (lockRoutes)
             {
-                Monitor.Wait(lockRoutes, waited);
-
-                Console.WriteLine("Manager waited {0} milliseconds for the routes to be created.", waited);
+                Monitor.Wait(lockRoutes, 3000);
 
                 // Get all routes from the file
                 rwf.ReadFile(allRoutes);
