@@ -11,7 +11,6 @@ namespace DAN_XXXVII_Kristina_Garcia_Francisco
     {        
         private List<int> allRoutes = new List<int>();
         public static List<int> bestRoutes = new List<int>();
-        private Random rng = new Random();
         private readonly object lockRoutes = new object();
 
         public void CreateRoutes()
