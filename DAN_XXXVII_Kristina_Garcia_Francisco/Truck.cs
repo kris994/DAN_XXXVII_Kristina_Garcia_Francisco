@@ -13,69 +13,17 @@ namespace DAN_XXXVII_Kristina_Garcia_Francisco
         private List<Thread> allTrucks = new List<Thread>();       
         private List<int> allRoutes = new List<int>();
         private List<int> bestRoutes = new List<int>();
-        private string routesFile = "routes.txt";
         private Random rng = new Random();
-        private bool ready = false;
         private readonly object lockRoutes = new object();
 
-        #region Read and Write from file
-        /// <summary>
-        /// Write routes to file
-        /// </summary>
         public void CreateRoutes()
         {
-            // Save all the routes to file
-            using (StreamWriter streamWriter = new StreamWriter(routesFile))
+            ReadWriteFile rwf = new ReadWriteFile();
+            lock(lockRoutes)
             {
-                for (int i = 0; i < 1000; i++)
-                {
-                    int route = rng.Next(1, 5001);
-                    streamWriter.WriteLine(route);
-                }
+                rwf.WriteToFile();
+                Monitor.Pulse(lockRoutes);
             }
-
-            ready = true;
-        }
-
-        /// <summary>
-        /// Read routes from file
-        /// </summary>
-        public void ReadFile()
-        {
-            using (StreamReader streamReader = File.OpenText(routesFile))
-            {
-                Console.WriteLine("\nAll routes: ");
-                string line;
-                while ((line = streamReader.ReadLine()) != null)
-                {
-                    allRoutes.Add(int.Parse(line));
-                    Console.Write(line + " ");
-                }
-            }
-        }
-        #endregion
-
-        /// <summary>
-        /// Thread waits a given random amount of time
-        /// </summary>
-        /// <param name="startTime">minimum time to wait</param>
-        /// <param name="maxTime">maximum time to wait</param>
-        /// <returns>the random generated wait time</returns>
-        public int WaitTime(int minTime, int maxTime)
-        {
-            int sleepTime = rng.Next(minTime, maxTime);
-            Thread.Sleep(sleepTime);
-
-            // Run this while in case the thread started before the routes were created
-            while (ready == false)
-            {
-                // Thread cannot sleep longer than its maxTime
-                maxTime = maxTime - sleepTime;
-                sleepTime = rng.Next(minTime, maxTime);
-                Thread.Sleep(sleepTime);
-            }
-
-            return sleepTime;
         }
 
         public void BestRoutes()
@@ -105,20 +53,24 @@ namespace DAN_XXXVII_Kristina_Garcia_Francisco
 
         public void ChooseBestRoutes()
         {
+            ReadWriteFile rwf = new ReadWriteFile();
+
             Console.WriteLine("Manager waiting for routes to be created...");
             // Sleep max 3sec
-            int waited = WaitTime(0, 3001);
+            int waited = rng.Next(1000, 3001);
+            
+            lock (lockRoutes)
+            {
+                Monitor.Wait(lockRoutes, waited);
 
-            Console.WriteLine("Manager waited {0} milliseconds for the routes to be created.", waited);
+                Console.WriteLine("Manager waited {0} milliseconds for the routes to be created.", waited);
 
-            // Return the ready bool back to default for future use
-            ready = false;
+                // Get all routes from the file
+                rwf.ReadFile(allRoutes);
 
-            // Get all routes from the file
-            ReadFile();
-
-            // Get best 10 routes
-            BestRoutes();
+                // Get best 10 routes
+                BestRoutes();
+            }
         }
 
         public void CreateWorkers()
