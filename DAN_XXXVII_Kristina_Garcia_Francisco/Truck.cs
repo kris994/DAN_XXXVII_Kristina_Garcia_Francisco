@@ -157,10 +157,10 @@ namespace DAN_XXXVII_Kristina_Garcia_Francisco
                 }
                 else
                 {
-                    int unloadingTime = allLoadingTime.FirstOrDefault(x => x.Value == Thread.CurrentThread.Name).Key;
+                    int unloadingTime = Convert.ToInt32(allLoadingTime.FirstOrDefault(x => x.Value == Thread.CurrentThread.Name).Key / 1.5);
                     Console.WriteLine("Truck {0} arrived, unloading time {1} milliseconds."
-                        , Thread.CurrentThread.Name, unloadingTime / 2);
-                    Monitor.Wait(lockArrival, unloadingTime / 2);
+                        , Thread.CurrentThread.Name, unloadingTime);
+                    Monitor.Wait(lockArrival, unloadingTime);
                     Console.WriteLine("\t\t\t\t\t\t\t\tTruck {0} successfully unloaded.", Thread.CurrentThread.Name);
                 }
             }
