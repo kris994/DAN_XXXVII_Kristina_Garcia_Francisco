@@ -43,12 +43,10 @@ namespace DAN_XXXVII_Kristina_Garcia_Francisco
         {
             using (StreamReader streamReader = File.OpenText(routesFile))
             {
-                Console.WriteLine("\nAll routes: ");
                 string line;
                 while ((line = streamReader.ReadLine()) != null)
                 {
                     list.Add(int.Parse(line));
-                    Console.Write(line + " ");
                 }
             }
         }

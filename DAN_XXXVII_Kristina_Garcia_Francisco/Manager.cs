@@ -79,6 +79,8 @@ namespace DAN_XXXVII_Kristina_Garcia_Francisco
 
             Console.Write("\nThe best routes are: ");
             ReadChosenRoutes();
+
+            Console.WriteLine("Loading:");
         }
 
         /// <summary>
@@ -108,7 +110,7 @@ namespace DAN_XXXVII_Kristina_Garcia_Francisco
 
                 if(elapsedTime > 3000)
                 {
-                    Console.WriteLine("\n\nToo much time has passed, manager will choose from available routes.");
+                    Console.WriteLine("\nToo much time has passed, manager will choose from available routes.");
                     // If too much time has passed get any 10 routes from the list
                     for (int i = 0; i < allRoutes.Count; i++)
                     {
@@ -123,7 +125,7 @@ namespace DAN_XXXVII_Kristina_Garcia_Francisco
                 }
                 else
                 {
-                    Console.WriteLine("\n\nManager waited for {0} milliseconds for values to be created.", elapsedTime);
+                    Console.WriteLine("\nManager waited for {0} milliseconds for routes to be created.", elapsedTime);
                     // Get best 10 routes
                     BestRoutes();
                 }

@@ -32,6 +32,10 @@ namespace DAN_XXXVII_Kristina_Garcia_Francisco
         /// </summary>
         private readonly object lockArrival = new object();
         /// <summary>
+        /// Locks the trucks routing
+        /// </summary>
+        private readonly object lockRouting = new object();
+        /// <summary>
         /// Generate random numbers when needed
         /// </summary>
         private Random rng = new Random();
@@ -81,14 +85,14 @@ namespace DAN_XXXVII_Kristina_Garcia_Francisco
             {
                 waitTime = rng.Next(500, 5001);
                 // Ensuring to get a random waitTime
-                Thread.Sleep(15);
+                Thread.Sleep(20);
                 allLoadingTime.Add(waitTime, Thread.CurrentThread.Name);
             }
             Thread.Sleep(waitTime);
             // Write the time it took to load
             if (allLoadingTime.Any(tr => tr.Value.Equals(Thread.CurrentThread.Name)))
             {
-                Console.WriteLine("Truck {0} finished loading, it took {1} milliseconds."
+                Console.WriteLine("Truck {0} finished loading after {1} milliseconds."
                     , Thread.CurrentThread.Name, allLoadingTime.FirstOrDefault(x => x.Value == Thread.CurrentThread.Name).Key);
             }
             semaphore.Release();
@@ -108,9 +112,9 @@ namespace DAN_XXXVII_Kristina_Garcia_Francisco
         /// </summary>
         public void TruckRouting()
         {
-            lock (lockTruck)
+            lock (lockRouting)
             {
-                Console.WriteLine("Truck {0} received route {1}", Thread.CurrentThread.Name, Manager.truckRoutes[routeCounter]);
+                Console.WriteLine("\t\t\t\t\t\t\t\tTruck {0} received route {1}", Thread.CurrentThread.Name, Manager.truckRoutes[routeCounter]);
                 routeCounter++;
             }
         }
@@ -127,7 +131,7 @@ namespace DAN_XXXVII_Kristina_Garcia_Francisco
             {
                 arrivalTime = rng.Next(500, 5000);
 
-                Console.WriteLine("Truck {0} started coming, expected arrival time in {1} milliseconds."
+                Console.WriteLine("Truck {0} expected arrival time {1} milliseconds."
                     , Thread.CurrentThread.Name, arrivalTime);
                 enterCounter++;
 
@@ -146,18 +150,18 @@ namespace DAN_XXXVII_Kristina_Garcia_Francisco
             {
                 if (arrivalTime > 3000)
                 {
-                    Console.WriteLine("Truck {0} is taking too long to arrive, delivery has been canceled. " +
-                    "Expected return time is {1} milliseconds.", Thread.CurrentThread.Name, arrivalTime);
+                    Console.WriteLine("Truck {0} delivery canceled. " +
+                    "Return time {1} milliseconds.", Thread.CurrentThread.Name, arrivalTime);
                     Monitor.Wait(lockArrival, arrivalTime);
-                    Console.WriteLine("\t\t\t\t\tTruck {0} successfully returned.", Thread.CurrentThread.Name);
+                    Console.WriteLine("\t\t\t\t\t\t\t\tTruck {0} successfully returned.", Thread.CurrentThread.Name);
                 }
                 else
                 {
                     int unloadingTime = allLoadingTime.FirstOrDefault(x => x.Value == Thread.CurrentThread.Name).Key;
-                    Console.WriteLine("Truck {0} arrived, the unloading time is {1} milliseconds."
+                    Console.WriteLine("Truck {0} arrived, unloading time {1} milliseconds."
                         , Thread.CurrentThread.Name, unloadingTime / 2);
                     Monitor.Wait(lockArrival, unloadingTime / 2);
-                    Console.WriteLine("\t\t\t\t\tTruck {0} successfully unloaded.", Thread.CurrentThread.Name);
+                    Console.WriteLine("\t\t\t\t\t\t\t\tTruck {0} successfully unloaded.", Thread.CurrentThread.Name);
                 }
             }
         }
@@ -209,7 +213,7 @@ namespace DAN_XXXVII_Kristina_Garcia_Francisco
             {
                 if (activeThreads == amount)
                 {
-                    Console.WriteLine();
+                    Console.WriteLine("\nDestination:");
                     activeThreads = 0;
                 }
             }
