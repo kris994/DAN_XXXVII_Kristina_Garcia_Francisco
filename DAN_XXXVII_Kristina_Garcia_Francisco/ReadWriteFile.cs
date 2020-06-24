@@ -9,8 +9,16 @@ namespace DAN_XXXVII_Kristina_Garcia_Francisco
     /// </summary>
     class ReadWriteFile
     {
+        #region Property
+        /// <summary>
+        /// File we are reading and writing to
+        /// </summary>
         private readonly string routesFile = "routes.txt";
+        /// <summary>
+        /// Creates random values for routes
+        /// </summary>
         private Random rng = new Random();
+        #endregion
 
         /// <summary>
         /// Write routes to file

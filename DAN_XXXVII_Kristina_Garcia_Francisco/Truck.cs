@@ -5,14 +5,35 @@ using System.Threading;
 
 namespace DAN_XXXVII_Kristina_Garcia_Francisco
 {
+    /// <summary>
+    /// Creates trucks and represents all actions trucks have to do
+    /// </summary>
     class Truck
     {
         #region Properties
+        /// <summary>
+        /// List of all active trucks
+        /// </summary>
         private List<Thread> allTrucks = new List<Thread>();
+        /// <summary>
+        /// Saving each trucks time it took to load
+        /// </summary>
         private Dictionary<int, string> allLoadingTime = new Dictionary<int, string>();
-        private Dictionary<int, string> allArrivalTime = new Dictionary<int, string>();
+        /// <summary>
+        /// Semaphore for controling the truck loading time
+        /// </summary>
         private SemaphoreSlim semaphore = new SemaphoreSlim(2, 2);
+        /// <summary>
+        /// Locks the truck activities
+        /// </summary>
         private readonly object lockTruck = new object();
+        /// <summary>
+        /// Locks the trucks arrival
+        /// </summary>
+        private readonly object lockArrival = new object();
+        /// <summary>
+        /// Generate random numbers when needed
+        /// </summary>
         private Random rng = new Random();
         /// <summary>
         /// Counts the active amount of threads
@@ -26,25 +47,35 @@ namespace DAN_XXXVII_Kristina_Garcia_Francisco
         /// Restarts the thread counts
         /// </summary>
         private int restartThreadCount = 0;
+        /// <summary>
+        /// Counts the amount of routes that were given to threads
+        /// </summary>
+        private int routeCounter = 0;
         #endregion
 
+        /// <summary>
+        /// All actions that a truck needs to do
+        /// </summary>
         public void TruckActions()
         {
             TruckLoading();
             PauseThreadUntilAllReady(10);
             TruckRouting();
-            PauseThreadUntilAllReady(10);
-            TruckUnloading();
+            TruckArriving();
         }
 
+        #region Loading
+        /// <summary>
+        /// Load 2 trucks at the same time, each loading takes a random amount of time
+        /// </summary>
         public void TruckLoading()
-        {           
+        {
             int waitTime;
 
             // Amount fo threads that can enter the semaphore
             MultipleThreads(2);
 
-            semaphore.Wait();           
+            semaphore.Wait();
             Console.WriteLine("Truck {0} started loading.", Thread.CurrentThread.Name);
             lock (lockTruck)
             {
@@ -54,7 +85,7 @@ namespace DAN_XXXVII_Kristina_Garcia_Francisco
                 allLoadingTime.Add(waitTime, Thread.CurrentThread.Name);
             }
             Thread.Sleep(waitTime);
-            // Write the tiem it took to load
+            // Write the time it took to load
             if (allLoadingTime.Any(tr => tr.Value.Equals(Thread.CurrentThread.Name)))
             {
                 Console.WriteLine("Truck {0} finished loading, it took {1} milliseconds."
@@ -63,9 +94,76 @@ namespace DAN_XXXVII_Kristina_Garcia_Francisco
             semaphore.Release();
 
             // Let more threads enter the semaphore
-            RestartMultipleThreads();
+            restartThreadCount--;
+            if (restartThreadCount == 0)
+            {
+                enterCounter = 0;
+            }
+        }
+        #endregion
+
+        #region Routing
+        /// <summary>
+        /// Give routes to each thread
+        /// </summary>
+        public void TruckRouting()
+        {
+            lock (lockTruck)
+            {
+                Console.WriteLine("Truck {0} received route {1}", Thread.CurrentThread.Name, Manager.truckRoutes[routeCounter]);
+                routeCounter++;
+            }
+        }
+        #endregion
+
+        #region Arrival
+        /// <summary>
+        /// Calculates the trucks arrival time
+        /// </summary>
+        public void TruckArriving()
+        {
+            int arrivalTime;
+            lock (lockTruck)
+            {
+                arrivalTime = rng.Next(500, 5000);
+
+                Console.WriteLine("Truck {0} started coming, expected arrival time in {1} milliseconds."
+                    , Thread.CurrentThread.Name, arrivalTime);
+                enterCounter++;
+
+                Monitor.Wait(lockTruck, arrivalTime);
+            }
+            ArrivalActions(arrivalTime);
         }
 
+        /// <summary>
+        /// Depending on the time a truck took to arrive, different actions will be done
+        /// </summary>
+        /// <param name="arrivalTime">the time it took for the truck to arrive</param>
+        public void ArrivalActions(int arrivalTime)
+        {
+            lock (lockArrival)
+            {
+                if (arrivalTime > 3000)
+                {
+                    Console.WriteLine("Truck {0} is taking too long to arrive, delivery has been canceled. " +
+                    "Expected return time is {1} milliseconds.", Thread.CurrentThread.Name, arrivalTime);
+                    Monitor.Wait(lockArrival, arrivalTime);
+                    Console.WriteLine("\t\t\t\t\tTruck {0} successfully returned.", Thread.CurrentThread.Name);
+                }
+                else
+                {
+                    int unloadingTime = allLoadingTime.FirstOrDefault(x => x.Value == Thread.CurrentThread.Name).Key;
+                    Console.WriteLine("Truck {0} arrived, the unloading time is {1} milliseconds."
+                        , Thread.CurrentThread.Name, unloadingTime / 2);
+                    Monitor.Wait(lockArrival, unloadingTime / 2);
+                    Console.WriteLine("\t\t\t\t\tTruck {0} successfully unloaded.", Thread.CurrentThread.Name);
+                }
+            }
+        }
+        #endregion
+
+        #region Manipulating truck threads
         /// <summary>
         /// Only let a fixed amount of threads to enter
         /// </summary>
@@ -93,19 +191,6 @@ namespace DAN_XXXVII_Kristina_Garcia_Francisco
         }
 
         /// <summary>
-        /// Restart the amount of threads
-        /// </summary>
-        public void RestartMultipleThreads()
-        {
-            // Open semaphore for more threads
-            restartThreadCount--;
-            if (restartThreadCount == 0)
-            {
-                enterCounter = 0;
-            }
-        }
-
-        /// <summary>
         /// Pause all threads until all of them are ready to continue
         /// </summary>
         /// <param name="amount">amount of threads to wait to be ready</param>
@@ -129,63 +214,11 @@ namespace DAN_XXXVII_Kristina_Garcia_Francisco
                 }
             }
         }
+        #endregion
 
         /// <summary>
-        /// Give routes to each thread
+        /// Creates 10 different truck threads and starts them at the same time
         /// </summary>
-        public void TruckRouting()
-        {
-            lock(lockTruck)
-            {
-                Console.WriteLine("Truck {0} received route {1}", Thread.CurrentThread.Name, Manager.bestRoutes[enterCounter]);
-                enterCounter++;
-            }
-        }
-
-        public void TruckUnloading()
-        {
-            int arrivalTime;
-            lock (lockTruck)
-            {
-                arrivalTime = rng.Next(500, 5000);
-
-                Console.WriteLine("Truck {0} started coming, expected arrival time in {1} milliseconds."
-                    , Thread.CurrentThread.Name, arrivalTime);
-                enterCounter++;
-                allArrivalTime.Add(arrivalTime, Thread.CurrentThread.Name);
-
-                ArrivalNotification(arrivalTime);
-            }           
-        }
-
-        public void ArrivalNotification(int arrivalTime)
-        {
-            Thread.Sleep(arrivalTime);
-
-            if (arrivalTime > 3000)
-            {
-                if (allArrivalTime.Any(tr => tr.Value.Equals(Thread.CurrentThread.Name)))
-                {
-                    Console.WriteLine("Truck {0} is taking too long to arrive, delivery has been canceled. " +
-                "Expected return time is {1} milliseconds.", Thread.CurrentThread.Name, arrivalTime);
-                    Thread.Sleep(arrivalTime);
-                    Console.WriteLine("Truck {0} successfully returned.", Thread.CurrentThread.Name);
-                }
-            }
-            else
-            {
-                // Write the time it took to unload
-                if (allLoadingTime.Any(tr => tr.Value.Equals(Thread.CurrentThread.Name)))
-                {
-                    int unloadingTime = allLoadingTime.FirstOrDefault(x => x.Value == Thread.CurrentThread.Name).Key / 2;
-                    Console.WriteLine("Truck {0} arrived, the unloading time is {1} milliseconds."
-                        , Thread.CurrentThread.Name, unloadingTime);
-                    Thread.Sleep(unloadingTime);
-                    Console.WriteLine("Truck {0} successfully unloaded.", Thread.CurrentThread.Name);
-                }
-            }
-        }
-
         public void CreateTrucks()
         {
             for (int i = 1; i < 11; i++)

@@ -1,28 +1,65 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace DAN_XXXVII_Kristina_Garcia_Francisco
 {
+    /// <summary>
+    /// Class that creates routes for trucks
+    /// </summary>
     class Manager
-    {        
+    {
+        #region Property
+        /// <summary>
+        /// List of all routes
+        /// </summary>
         private List<int> allRoutes = new List<int>();
-        public static List<int> bestRoutes = new List<int>();
+        /// <summary>
+        /// List of routes that trucks will take
+        /// </summary>
+        public static List<int> truckRoutes = new List<int>();
+        /// <summary>
+        /// Controls the access to route files
+        /// </summary>
         private readonly object lockRoutes = new object();
+        #endregion
 
+        /// <summary>
+        /// Reads truck routes from the list
+        /// </summary>
+        public void ReadChosenRoutes()
+        {
+            foreach (var item in truckRoutes)
+            {
+                Console.Write("{0} ", item);
+            }
+            Console.WriteLine("\nThe trucks can now be loaded.\n");
+        }
+
+        /// <summary>
+        /// Creates new routes and saves them to the file
+        /// </summary>
         public void CreateRoutes()
         {
             ReadWriteFile rwf = new ReadWriteFile();
+            Random rng = new Random();
+            int timeTaken = rng.Next(0, 3001);
+
             lock (lockRoutes)
             {
+                // Wait for manager to start
+                Monitor.Wait(lockRoutes);
+                Thread.Sleep(timeTaken);
                 rwf.WriteToFile();
                 Monitor.Pulse(lockRoutes);
             }
         }
 
+        /// <summary>
+        /// Chooses the the optimal route
+        /// </summary>
         public void BestRoutes()
         {
             List<int> distinctValues = allRoutes.Distinct().ToList();
@@ -32,46 +69,76 @@ namespace DAN_XXXVII_Kristina_Garcia_Francisco
             {
                 if (distinctValues[i] % 3 == 0)
                 {
-                    bestRoutes.Add(distinctValues[i]);
-                    if (bestRoutes.Count == 10)
+                    truckRoutes.Add(distinctValues[i]);
+                    if (truckRoutes.Count == 10)
                     {
                         break;
                     }
                 }
             }
 
-            Console.Write("\n\nRoutes were created, the best routes are: ");
-            foreach (var item in bestRoutes)
-            {
-                Console.Write("{0} ", item);
-            }
-            Console.WriteLine("\nThe trucks can now be loaded.\n");
+            Console.Write("\nThe best routes are: ");
+            ReadChosenRoutes();
         }
 
-        public void ChooseBestRoutes()
+        /// <summary>
+        /// Chooses the possible routes for the time given
+        /// </summary>
+        public void ChooseRoutes()
         {
             ReadWriteFile rwf = new ReadWriteFile();
+            // Counting how long the manager waited for values to be created
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
 
             Console.WriteLine("Manager waiting for routes to be created...");
             // Sleep max 3sec
             lock (lockRoutes)
             {
+                Monitor.Pulse(lockRoutes);
                 Monitor.Wait(lockRoutes, 3000);
+                stopWatch.Stop();
+
+                // Get the elapsed time as a TimeSpan value.
+                TimeSpan ts = stopWatch.Elapsed;
+                int elapsedTime = (ts.Seconds * 1000) + ts.Milliseconds;               
 
                 // Get all routes from the file
                 rwf.ReadFile(allRoutes);
 
-                // Get best 10 routes
-                BestRoutes();
+                if(elapsedTime > 3000)
+                {
+                    Console.WriteLine("\n\nToo much time has passed, manager will choose from available routes.");
+                    // If too much time has passed get any 10 routes from the list
+                    for (int i = 0; i < allRoutes.Count; i++)
+                    {
+                        truckRoutes.Add(allRoutes[i]);
+                        if (truckRoutes.Count == 10)
+                        {
+                            break;
+                        }
+                    }
+                    Console.Write("\nRoutes: ");
+                    ReadChosenRoutes();
+                }
+                else
+                {
+                    Console.WriteLine("\n\nManager waited for {0} milliseconds for values to be created.", elapsedTime);
+                    // Get best 10 routes
+                    BestRoutes();
+                }
             }
         }
 
+        /// <summary>
+        /// Creates working threads
+        /// </summary>
         public void CreateWorkers()
         {
             Thread getValues = new Thread(CreateRoutes);
             getValues.Start();
 
-            Thread menager = new Thread(ChooseBestRoutes);
+            Thread menager = new Thread(ChooseRoutes);
             menager.Start();
 
             getValues.Join();
